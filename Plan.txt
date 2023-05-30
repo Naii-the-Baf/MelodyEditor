@@ -1,0 +1,343 @@
+EEPROM has 512 bytes.
+
+Header
+	1 byte
+	Tempo: How fast the melody is. Changes a global value `timer_length` to match the desired tempo. MUST BE MEASURED IN REAL TIME.
+		60 BPM = 1 beat every second.
+		Every note should set an interrupt length for the timer, as it must be played in real time.
+		Use Timer2. Timer2 has no output.
+		Format:
+			Byte 0 contains the tempo, measured in beats per minute (for precision). Goes up to 255. BPM cannot be zero; if it is, it defaults to 60.
+			The base time is this value divided by 60. This must be stored as a double.
+	
+Notes
+	2 bytes (Up to 255 notes can be saved, but only 220 will be considered due to memory limitations.)
+	
+	Values: OCR, Prescaler & Length
+		Length can be anywhere from a full note to a thirtieth note (9 types):
+			Full, half, half dotted, quarter, quarter dotted, eighth, eighth dotted, sixteenth, thirtieth
+			   4,    2,           3,       1,            1.5,    0.5,          0.75,      0.25,     0.125
+	Format
+		Byte 0 contains the OCR value. If 0, this is a silence and the timer should be OFF.
+		Byte 1 bit 4 contains the prescaler value (0 for 8, 1 for 64)
+		Byte 1 bits 0-7 contain a bitmask representing the length.
+			A length of 0x00 represents EOF.
+		
+	Use Timer0 to play notes. A speaker should be connected here.
+	
+	
+Programming a melody (KEYPAD)
+	Saving & Loading:
+		Press C to load a melody. You will be prompted for confirmation.
+		Press D to save a melody. You will be prompted for confirmation.
+		
+	Playing:
+		Press 1 to play a melody.
+		Press 2 to stop a melody. This turns off interrupts for Timer0 as well.
+
+	Scrolling:
+		*: Scroll left
+		#: Scroll right
+		When scrolling over a note, it will be played for half a second. Silences don't trigger this.
+			You can also press 3.
+	
+	Inserting a note:
+		Press 4 to ADD a new note.
+		Press 5 to REPLACE a note.
+		Press 6 to DELETE a note. There is no prompt for this.
+		You will immediately be prompted to scroll through a preset of notes.
+			If scrolling though a preset, press 4 and 6 to decrease or increase the pitch of the note, starting at A4 (440Hz). Press 5 instead to hear the note again.
+			You can press 2 to jump up 12 notes (1 octave) and 8 to jump down the same amount.
+			Press 0 to insert a silence.
+			After selecting a pitch (or silence), you will be prompted to insert a length. The value must be between 1 and 11.
+			
+			To confirm, press A.
+			To cancel, press B.
+	
+	Setting the tempo:
+		Press A, then insert a value in BPM.
+	
+Display
+	Row 1 displays the note. Notes are displayed as a unique character for 60 possible different notes.
+		Notes are represented from ASCII values 33 (!) to 92 (\).
+		A space will be displayed for a silence. (value 32)
+	Row 2 displays the length, in hex form.
+	
+	Display may be too long (200 notes is a lot), so a custom function should be made for displaying instead.
+	
+	
+Some example tunes:
+
+//Rage of the Abandoned
+double timer_length = 60.0 / (double)(138); //Length of a beat, in seconds
+u8 melody[201][2] = {{29,	0x08},
+					 {25,	0x08},
+					 {27,	0x08},
+					 {29,	0x08},
+					 {0,	0x08},
+					 {25,	0x08},
+					 {27,	0x08},
+					 {29,	0x08},
+					 {30,	0x08},
+					 {0,	0x08},
+					 {29,	0x08},
+					 {0,	0x08},
+					 {27,	0x08},
+					 {0,	0x08},
+					 {25,	0x08},
+					 {0,	0x08},
+					 {25,	0x08},
+					 {22,	0x08},
+					 {24,	0x08},
+					 {25,	0x08},
+					 {0,	0x08},
+					 {22,	0x08},
+					 {24,	0x08},
+					 {25,	0x08},
+					 {27,	0x08},
+					 {0,	0x08},
+					 {25,	0x08},
+					 {0,	0x08},
+					 {24,	0x08},
+					 {0,	0x08},
+					 {22,	0x08},
+					 {0,	0x08},
+					 {0,	0x00}};
+
+//Good Karma
+double timer_length = 60.0 / (double)(140); //Length of a beat, in seconds
+u8 melody[201][2] = {{51,	0x04},
+					 {53,	0x04},
+					 {56,	0x0C},
+					 {53,	0x08},
+					 {51,	0x04},
+					 {48,	0x04},
+					 {49,	0x04},
+					 {48,	0x0C},
+					 {51,	0x08},
+					 {52,	0x04},
+					 {53,	0x0C},
+					 {51,	0x10},
+					 {48,	0x08},
+					 {49,	0x08},
+					 {48,	0x08},
+					 {44,	0x08},
+					 {41,	0x10},
+					 {44,	0x10},
+					 {46,	0x10},
+					 {47,	0x10},
+					 {48,	0x10},
+					 {46,	0x10},
+					 {43,	0x10},
+					 {41,	0x10},
+					 {37,	0x10},
+					 {36,	0x10},
+					 {34,	0x10},
+					 {36,	0x10},
+					 {39,	0x10},
+					 {41,	0x10},
+					 {44,	0x10},
+					 {47,	0x10},
+					 {48,	0x10},
+					 {51,	0x10},
+					 {49,	0x10},
+					 {48,	0x18},
+					 {48,	0x18},
+					 {48,	0x18},
+					 {48,	0x18},
+					 {48,	0x10},
+					 {46,	0x10},
+					 {44,	0x10},
+					 {46,	0x08},
+					 {48,	0x08},
+					 {46,	0x08},
+					 {56,	0x10},
+					 {58,	0x10},
+					 {56,	0x10},
+					 {53,	0x10},
+					 {51,	0x10},
+					 {48,	0x10},
+					 {46,	0x10},
+					 {47,	0x10},
+					 {48,	0x10},
+					 {53,	0x10},
+					 {56,	0x10},
+					 {55,	0x10},
+					 {53,	0x10},
+					 {51,	0x10},
+					 {48,	0x10},
+					 {46,	0x10},
+					 {44,	0x10},
+					 {40,	0x10},
+					 {41,	0x10},
+					 {43,	0x10},
+					 {44,	0x10},
+					 {48,	0x10},
+					 {46,	0x10},
+					 {44,	0x10},
+					 {40,	0x10},
+					 {36,	0x10},
+					 {34,	0x10},
+					 {44,	0x10},
+					 {40,	0x10},
+					 {36,	0x10},
+					 {34,	0x10},
+					 {44,	0x10},
+					 {48,	0x08},
+					 {46,	0x08},
+					 {44,	0x08},
+					 {51,	0x08},
+					 {48,	0x10},
+					 {51,	0x10},
+					 {49,	0x10},
+					 {0,	0x00}};
+
+//The Scorpion
+double timer_length = 60.0 / (double)(116); //Length of a beat, in seconds
+u8 melody[201][2] = {{39,	0x18},
+					 {37,	0x30},
+					 {0,	0x30},
+					 {42,	0x04},
+					 {39,	0x10},
+					 {0,	0x10},
+					 {37,	0x10},
+					 {39,	0x08},
+					 {34,	0x02},
+					 {0,	0x18},
+					 {32,	0x08},
+					 {32,	0x10},
+					 {0,	0x10},
+					 {34,	0x10},
+					 {0,	0x10},
+					 {35,	0x02},
+					 {0,	0x04},
+					 {35,	0x10},
+					 {37,	0x10},
+					 {0,	0x10},
+					 {35,	0x18},
+					 {34,	0x02},
+					 {0,	0x0C},
+					 {39,	0x18},
+					 {37,	0x30},
+					 {0,	0x30},
+					 {42,	0x04},
+					 {39,	0x10},
+					 {0,	0x10},
+					 {37,	0x10},
+					 {39,	0x08},
+					 {34,	0x02},
+					 {0,	0x18},
+					 {32,	0x08},
+					 {32,	0x10},
+					 {0,	0x10},
+					 {34,	0x10},
+					 {0,	0x10},
+					 {35,	0x02},
+					 {0,	0x18},
+					 {35,	0x10},
+					 {0,	0x10},
+					 {35,	0x10},
+					 {37,	0x10},
+					 {0,	0x10},
+					 {35,	0x10},
+					 {35,	0x30},
+					 {0,	0x30},
+					 {34,	0x30},
+					 {0,	0x30},
+					 {30,	0x30},
+					 {0,	0x28},
+					 {11,	0x08},
+					 {10,	0x08},
+					 {9,	0x08},
+					 {8,	0x08},
+					 {39,	0x10},
+					 {38,	0x10},
+					 {37,	0x10},
+					 {36,	0x10},
+					 {35,	0x10},
+					 {34,	0x08},
+					 {33,	0x08},
+					 {32,	0x10},
+					 {33,	0x08},
+					 {34,	0x10},
+					 {35,	0x08},
+					 {36,	0x08},
+					 {37,	0x08},
+					 {38,	0x08},
+					 {39,	0x08},
+					 {42,	0x10},
+					 {37,	0x10},
+					 {39,	0x08},
+					 {37,	0x08},
+					 {35,	0x10},
+					 {32,	0x10},
+					 {33,	0x10},
+					 {34,	0x10},
+					 {35,	0x08},
+					 {37,	0x08},
+					 {38,	0x08},
+					 {39,	0x08},
+					 {42,	0x10},
+					 {41,	0x10},
+					 {40,	0x10},
+					 {39,	0x10},
+					 {38,	0x10},
+					 {39,	0x10},
+					 {38,	0x10},
+					 {37,	0x10},
+					 {35,	0x30},
+					 {0,	0x30},
+					 {30,	0x14},
+					 {32,	0x10},
+					 {34,	0x10},
+					 {35,	0x10},
+					 {37,	0x10},
+					 {39,	0x10},
+					 {32,	0x18},
+					 {39,	0x30},
+					 {0,	0x30},
+					 {38,	0x30},
+					 {0,	0x30},
+					 {37,	0x10},
+					 {0,	0x10},
+					 {44,	0x10},
+					 {35,	0x10},
+					 {37,	0x10},
+					 {38,	0x10},
+					 {39,	0x10},
+					 {42,	0x10},
+					 {43,	0x10},
+					 {46,	0x10},
+					 {44,	0x10},
+					 {42,	0x10},
+					 {41,	0x10},
+					 {40,	0x10},
+					 {42,	0x10},
+					 {40,	0x10},
+					 {39,	0x10},
+					 {38,	0x10},
+					 {39,	0x10},
+					 {38,	0x10},
+					 {37,	0x10},
+					 {36,	0x10},
+					 {37,	0x10},
+					 {38,	0x10},
+					 {39,	0x10},
+					 {42,	0x10},
+					 {41,	0x08},
+					 {39,	0x10},
+					 {38,	0x10},
+					 {39,	0x10},
+					 {38,	0x10},
+					 {37,	0x10},
+					 {36,	0x10},
+					 {37,	0x10},
+					 {36,	0x10},
+					 {35,	0x10},
+					 {34,	0x10},
+					 {35,	0x10},
+					 {35,	0x18},
+					 {34,	0x18},
+					 {30,	0x30},
+					 {0,	0x30},
+					 {0,	0x00}};
